@@ -490,11 +490,12 @@ function handleAction(action, id) {
   if (action === "delete") deleteProduct(id);
   if (action === "cart-add") addToCart(id);
   if (action === "cart-minus") removeFromCart(id);
-  if (action === "clear-cart") {
-  if (action === "clear-all-sales") clearAllSales();
-  if (action === "clear-all-data") clearAllData();
+   if (action === "clear-cart") {
     state.cart = {};
     render();
+  }
+  if (action === "clear-all-sales") clearAllSales();
+  if (action === "clear-all-data") clearAllData();
   }
   if (action === "complete-sale") completeSale();
   if (action === "label-toggle") toggleLabel(id);
