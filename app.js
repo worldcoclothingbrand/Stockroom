@@ -506,7 +506,6 @@ function handleAction(action, id) {
   if (action === "print-labels") printLabels();
   if (action === "export") exportData();
   }
-}
 
 function nextBarcode() {
   const max = state.products.reduce((highest, p) => Math.max(highest, Number(p.barcode) || 100000000000), 100000000000);
