@@ -589,13 +589,23 @@ function field(label, name, value, type, required) {
   return `<div class="field"><label>${label}</label><input class="input" name="${name}" type="${type}" value="${escapeHtml(value)}" ${required ? "required" : ""} ${type === "number" ? "step='0.01'" : ""}/></div>`;
 }
 
-function deleteProduct(id) {
+async function deleteProduct(id) {
   const product = state.products.find((p) => p.id === id);
   if (!product || !confirm(`Delete ${product.name}?`)) return;
   state.products = state.products.filter((p) => p.id !== id);
   delete state.cart[id];
   state.labelIds.delete(id);
-  save();
+
+  // Remove from localStorage
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.products));
+
+  // Remove from Firebase
+  try {
+    await db.collection("products").doc(id).delete();
+  } catch (e) {
+    console.log("Firebase delete failed", e);
+  }
+
   render();
   toast("Product deleted");
 }
