@@ -191,8 +191,12 @@ function render() {
   const t = totals();
   const visible = filteredProducts();
   app.innerHTML = `
+    <button class="hamburger" id="hamburger-btn" aria-label="Open menu">
+      <svg viewBox="0 0 24 24"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
     <div class="shell">
-      <aside class="sidebar">
+      <aside class="sidebar" id="sidebar">
         <div class="brand">
           <div class="mark">S</div>
           <div>
@@ -415,15 +419,14 @@ function renderReports(t) {
      <div class="panel">
         <div class="panel-head">
           <div><h3>Inventory value leaders</h3><p>Highest retail value currently on hand.</p></div>
-          
           <button class="ghost-button" style="color:#D12300; margin-left:auto;" 
-        data-action="clear-all-sales">
-  Clear All Sales
-</button>
+                  onclick="if(confirm('Delete ALL sales history permanently? This cannot be undone.')){localStorage.removeItem('stockroom.sales.v1');location.reload();}">
+            Clear All Sales
+          </button>
+
 <button class="ghost-button" style="color:#D12300;" 
-        data-action="clear-all-data">
-  Clear All Data
-</button>
+                    onclick="if(confirm('WARNING: This will delete ALL products AND sales data permanently!')){localStorage.removeItem('stockroom.inventory.v1');localStorage.removeItem('stockroom.sales.v1');location.reload();}">
+              Clear All Data
         </div>
         <table>
           <thead><tr><th>Product</th><th>Units</th><th>Retail value</th><th>Cost basis</th></tr></thead>
@@ -459,9 +462,27 @@ function renderReports(t) {
 }
 
 function bindEvents() {
+  // Hamburger menu toggle
+  const hamburger = document.getElementById("hamburger-btn");
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebar-overlay");
+
+  function openSidebar() {
+    sidebar?.classList.add("open");
+    overlay?.classList.add("open");
+  }
+  function closeSidebar() {
+    sidebar?.classList.remove("open");
+    overlay?.classList.remove("open");
+  }
+
+  hamburger?.addEventListener("click", openSidebar);
+  overlay?.addEventListener("click", closeSidebar);
+
   document.querySelectorAll("[data-tab]").forEach((button) => {
     button.addEventListener("click", () => {
       state.tab = button.dataset.tab;
+      closeSidebar();
       render();
     });
   });
@@ -490,12 +511,10 @@ function handleAction(action, id) {
   if (action === "delete") deleteProduct(id);
   if (action === "cart-add") addToCart(id);
   if (action === "cart-minus") removeFromCart(id);
-   if (action === "clear-cart") {
+  if (action === "clear-cart") {
     state.cart = {};
     render();
-   }
-  if (action === "clear-all-sales") clearAllSales();
-  if (action === "clear-all-data") clearAllData();
+  }
   if (action === "complete-sale") completeSale();
   if (action === "label-toggle") toggleLabel(id);
   if (action === "select-visible") {
@@ -504,7 +523,7 @@ function handleAction(action, id) {
   }
   if (action === "print-labels") printLabels();
   if (action === "export") exportData();
-  }
+}
 
 function nextBarcode() {
   const max = state.products.reduce((highest, p) => Math.max(highest, Number(p.barcode) || 100000000000), 100000000000);
@@ -588,63 +607,17 @@ function openProductModal(id) {
   });
 }
 
-async function clearAllSales() {
-  if (!confirm("Delete ALL sales history permanently? This cannot be undone.")) return;
-  state.sales = [];
-  localStorage.removeItem(SALES_KEY);
-  try {
-    const snap = await db.collection("sales").get();
-    for (const doc of snap.docs) await doc.ref.delete();
-  } catch (e) {
-    console.log("Firebase clear sales failed", e);
-  }
-  render();
-  toast("All sales cleared");
-}
-
-async function clearAllData() {
-  if (!confirm("WARNING: This will delete ALL products AND sales permanently!")) return;
-  state.products = [];
-  state.sales = [];
-  state.cart = {};
-  state.labelIds = new Set();
-  localStorage.removeItem(STORAGE_KEY);
-  localStorage.removeItem(SALES_KEY);
-  try {
-    const prodSnap = await db.collection("products").get();
-    for (const doc of prodSnap.docs) await doc.ref.delete();
-    const salesSnap = await db.collection("sales").get();
-    for (const doc of salesSnap.docs) await doc.ref.delete();
-  } catch (e) {
-    console.log("Firebase clear all failed", e);
-  }
-  render();
-  toast("All data cleared");
-}
-
-
-
 function field(label, name, value, type, required) {
   return `<div class="field"><label>${label}</label><input class="input" name="${name}" type="${type}" value="${escapeHtml(value)}" ${required ? "required" : ""} ${type === "number" ? "step='0.01'" : ""}/></div>`;
 }
 
-async function deleteProduct(id) {
+function deleteProduct(id) {
   const product = state.products.find((p) => p.id === id);
   if (!product || !confirm(`Delete ${product.name}?`)) return;
   state.products = state.products.filter((p) => p.id !== id);
   delete state.cart[id];
   state.labelIds.delete(id);
-
-  // Remove from localStorage
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.products));
-
-  // Remove from Firebase
-  try {
-    await db.collection("products").doc(id).delete();
-  } catch (e) {
-    console.log("Firebase delete failed", e);
-  }
-
+  save();
   render();
   toast("Product deleted");
 }
