@@ -491,6 +491,8 @@ function handleAction(action, id) {
   if (action === "cart-add") addToCart(id);
   if (action === "cart-minus") removeFromCart(id);
   if (action === "clear-cart") {
+  if (action === "clear-all-sales") clearAllSales();
+  if (action === "clear-all-data") clearAllData();
     state.cart = {};
     render();
   }
@@ -585,6 +587,42 @@ function openProductModal(id) {
     toast("Product saved");
   });
 }
+
+async function clearAllSales() {
+  if (!confirm("Delete ALL sales history permanently? This cannot be undone.")) return;
+  state.sales = [];
+  localStorage.removeItem(SALES_KEY);
+  try {
+    const snap = await db.collection("sales").get();
+    for (const doc of snap.docs) await doc.ref.delete();
+  } catch (e) {
+    console.log("Firebase clear sales failed", e);
+  }
+  render();
+  toast("All sales cleared");
+}
+
+async function clearAllData() {
+  if (!confirm("WARNING: This will delete ALL products AND sales permanently!")) return;
+  state.products = [];
+  state.sales = [];
+  state.cart = {};
+  state.labelIds = new Set();
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(SALES_KEY);
+  try {
+    const prodSnap = await db.collection("products").get();
+    for (const doc of prodSnap.docs) await doc.ref.delete();
+    const salesSnap = await db.collection("sales").get();
+    for (const doc of salesSnap.docs) await doc.ref.delete();
+  } catch (e) {
+    console.log("Firebase clear all failed", e);
+  }
+  render();
+  toast("All data cleared");
+}
+
+
 
 function field(label, name, value, type, required) {
   return `<div class="field"><label>${label}</label><input class="input" name="${name}" type="${type}" value="${escapeHtml(value)}" ${required ? "required" : ""} ${type === "number" ? "step='0.01'" : ""}/></div>`;
