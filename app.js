@@ -496,7 +496,6 @@ function handleAction(action, id) {
   }
   if (action === "clear-all-sales") clearAllSales();
   if (action === "clear-all-data") clearAllData();
-  }
   if (action === "complete-sale") completeSale();
   if (action === "label-toggle") toggleLabel(id);
   if (action === "select-visible") {
