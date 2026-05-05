@@ -505,6 +505,7 @@ function handleAction(action, id) {
   }
   if (action === "print-labels") printLabels();
   if (action === "export") exportData();
+  }
 }
 
 function nextBarcode() {
