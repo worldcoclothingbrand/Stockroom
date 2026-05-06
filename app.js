@@ -420,13 +420,14 @@ function renderReports(t) {
         <div class="panel-head">
           <div><h3>Inventory value leaders</h3><p>Highest retail value currently on hand.</p></div>
           <button class="ghost-button" style="color:#D12300; margin-left:auto;" 
-                  onclick="if(confirm('Delete ALL sales history permanently? This cannot be undone.')){localStorage.removeItem('stockroom.sales.v1');location.reload();}">
-            Clear All Sales
-          </button>
+  onclick="if(confirm('Delete ALL sales history permanently? This cannot be undone.')){localStorage.removeItem('stockroom.sales.v1');location.reload();}">
+  Clear All Sales
+</button>
 
 <button class="ghost-button" style="color:#D12300;" 
-                    onclick="if(confirm('WARNING: This will delete ALL products AND sales data permanently!')){localStorage.removeItem('stockroom.inventory.v1');localStorage.removeItem('stockroom.sales.v1');location.reload();}">
-              Clear All Data
+  onclick="if(confirm('WARNING: This will delete ALL products AND sales data permanently!')){localStorage.removeItem('stockroom.inventory.v1');localStorage.removeItem('stockroom.sales.v1');location.reload();}">
+  Clear All Data
+</button>
         </div>
         <table>
           <thead><tr><th>Product</th><th>Units</th><th>Retail value</th><th>Cost basis</th></tr></thead>
