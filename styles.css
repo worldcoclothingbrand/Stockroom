@@ -791,4 +791,14 @@ body {
   .sidebar-overlay.open {
     display: block;
   }
+
+  @media (max-width: 900px) {
+  .stat {
+    padding: 14px;
+  }
+
+  .stat strong {
+    font-size: 22px;
+  }
+}
 }
