@@ -191,8 +191,12 @@ function render() {
   const t = totals();
   const visible = filteredProducts();
   app.innerHTML = `
+    <button class="hamburger" id="hamburger-btn" aria-label="Open menu">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+    </button>
+    <div class="sidebar-overlay" id="sidebar-overlay"></div>
     <div class="shell">
-      <aside class="sidebar">
+      <aside class="sidebar" id="sidebar">
         <div class="brand">
           <div class="mark">S</div>
           <div>
@@ -299,7 +303,7 @@ function renderProductTable(products) {
             <tr>
               <td>
                 <div class="product-cell">
-                  <span class="swatch" style="background:${escapeHtml(p.color)}"></span>
+                  <span class="swatch" style="${p.image ? "background:url('" + p.image + "') center/cover no-repeat" : "background:#333"}"></span>
                   <div><span class="product-name">${escapeHtml(p.name)}</span><span class="sku">${escapeHtml(p.sku)}</span></div>
                 </div>
               </td>
@@ -415,22 +419,21 @@ function renderReports(t) {
      <div class="panel">
         <div class="panel-head">
           <div><h3>Inventory value leaders</h3><p>Highest retail value currently on hand.</p></div>
-          
           <button class="ghost-button" style="color:#D12300; margin-left:auto;" 
-        data-action="clear-all-sales">
-  Clear All Sales
-</button>
+                  onclick="if(confirm('Delete ALL sales history permanently? This cannot be undone.')){localStorage.removeItem('stockroom.sales.v1');location.reload();}">
+            Clear All Sales
+          </button>
+
 <button class="ghost-button" style="color:#D12300;" 
-        data-action="clear-all-data">
-  Clear All Data
-</button>
+                    onclick="if(confirm('WARNING: This will delete ALL products AND sales data permanently!')){localStorage.removeItem('stockroom.inventory.v1');localStorage.removeItem('stockroom.sales.v1');location.reload();}">
+              Clear All Data
         </div>
         <table>
           <thead><tr><th>Product</th><th>Units</th><th>Retail value</th><th>Cost basis</th></tr></thead>
           <tbody>
             ${topProducts.map((p) => `
               <tr>
-                <td><div class="product-cell"><span class="swatch" style="background:${escapeHtml(p.color)}"></span><div><span class="product-name">${escapeHtml(p.name)}</span><span class="sku">${escapeHtml(p.sku)}</span></div></div></td>
+                <td><div class="product-cell"><span class="swatch" style="${p.image ? "background:url('" + p.image + "') center/cover no-repeat" : "background:#333"}"></span><div><span class="product-name">${escapeHtml(p.name)}</span><span class="sku">${escapeHtml(p.sku)}</span></div></div></td>
                 <td>${number(p.stock)}</td>
                 <td>${money(p.stock * p.price)}</td>
                 <td>${money(p.stock * p.cost)}</td>
@@ -459,9 +462,19 @@ function renderReports(t) {
 }
 
 function bindEvents() {
+  // Hamburger menu
+  const hamburger = document.getElementById("hamburger-btn");
+  const sidebar = document.getElementById("sidebar");
+  const overlay = document.getElementById("sidebar-overlay");
+  function openSidebar() { sidebar?.classList.add("open"); overlay?.classList.add("open"); }
+  function closeSidebar() { sidebar?.classList.remove("open"); overlay?.classList.remove("open"); }
+  hamburger?.addEventListener("click", openSidebar);
+  overlay?.addEventListener("click", closeSidebar);
+
   document.querySelectorAll("[data-tab]").forEach((button) => {
     button.addEventListener("click", () => {
       state.tab = button.dataset.tab;
+      closeSidebar();
       render();
     });
   });
@@ -490,13 +503,10 @@ function handleAction(action, id) {
   if (action === "delete") deleteProduct(id);
   if (action === "cart-add") addToCart(id);
   if (action === "cart-minus") removeFromCart(id);
-   if (action === "clear-cart") {
+  if (action === "clear-cart") {
     state.cart = {};
     render();
-   }
-  if (action === "clear-all-sales") clearAllSales();
-  if (action === "clear-all-data") clearAllData();
-
+  }
   if (action === "complete-sale") completeSale();
   if (action === "label-toggle") toggleLabel(id);
   if (action === "select-visible") {
@@ -523,7 +533,7 @@ function openProductModal(id) {
     stock: 0,
     reorder: 5,
     barcode: nextBarcode(),
-    color: "#ffffff",
+    image: "",
     notes: "",
   };
   const modal = document.createElement("div");
@@ -541,7 +551,22 @@ function openProductModal(id) {
           ${field("Price", "price", product.price, "number", true)}
           ${field("Stock", "stock", product.stock, "number", true)}
           ${field("Reorder level", "reorder", product.reorder, "number", true)}
-          ${field("Color", "color", product.color, "color", true)}
+          <div class="field full">
+            <label>Product Image</label>
+            <div class="image-upload-area" id="image-upload-area">
+              ${product.image
+                ? `<img src="${product.image}" class="image-preview" id="image-preview" alt="Product"/>`
+                : `<div class="image-placeholder" id="image-placeholder">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+                    <span>Click or drag to upload image</span>
+                    <small>PNG, JPG, WEBP supported</small>
+                  </div>`
+              }
+            </div>
+            <input type="file" id="image-file-input" accept="image/*" style="display:none"/>
+            <input type="hidden" name="image" id="image-hidden" value="${escapeHtml(product.image || "")}"/>
+            ${product.image ? `<button type="button" class="ghost-button" id="remove-image-btn" style="margin-top:8px; width:100%;">Remove image</button>` : ""}
+          </div>
           <div class="field full"><label>Notes</label><textarea class="textarea" name="notes">${escapeHtml(product.notes)}</textarea></div>
           <div class="field full"><label>Preview</label><div class="barcode-wrap">${barcodeSvg(product.barcode)}</div></div>
         </div>
@@ -560,6 +585,68 @@ function openProductModal(id) {
   modal.querySelector("[name='barcode']").addEventListener("input", (event) => {
     modal.querySelector(".barcode-wrap").innerHTML = barcodeSvg(event.target.value);
   });
+
+  // Image upload logic
+  const uploadArea = modal.querySelector("#image-upload-area");
+  const fileInput = modal.querySelector("#image-file-input");
+  const hiddenInput = modal.querySelector("#image-hidden");
+
+  function applyImage(base64) {
+    hiddenInput.value = base64;
+    uploadArea.innerHTML = `<img src="${base64}" class="image-preview" id="image-preview" alt="Product"/>`;
+    let removeBtn = modal.querySelector("#remove-image-btn");
+    if (!removeBtn) {
+      removeBtn = document.createElement("button");
+      removeBtn.type = "button";
+      removeBtn.className = "ghost-button";
+      removeBtn.id = "remove-image-btn";
+      removeBtn.style = "margin-top:8px; width:100%;";
+      removeBtn.textContent = "Remove image";
+      uploadArea.parentElement.insertBefore(removeBtn, uploadArea.nextSibling);
+    }
+    removeBtn.onclick = () => {
+      hiddenInput.value = "";
+      uploadArea.innerHTML = `<div class="image-placeholder" id="image-placeholder">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+        <span>Click or drag to upload image</span>
+        <small>PNG, JPG, WEBP supported</small>
+      </div>`;
+      removeBtn.remove();
+    };
+  }
+
+  uploadArea.addEventListener("click", () => fileInput.click());
+  uploadArea.addEventListener("dragover", (e) => { e.preventDefault(); uploadArea.classList.add("drag-over"); });
+  uploadArea.addEventListener("dragleave", () => uploadArea.classList.remove("drag-over"));
+  uploadArea.addEventListener("drop", (e) => {
+    e.preventDefault();
+    uploadArea.classList.remove("drag-over");
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith("image/")) readImageFile(file);
+  });
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files[0]) readImageFile(fileInput.files[0]);
+  });
+
+  function readImageFile(file) {
+    const reader = new FileReader();
+    reader.onload = (e) => applyImage(e.target.result);
+    reader.readAsDataURL(file);
+  }
+
+  // Wire up existing remove button if editing a product that already has an image
+  const existingRemoveBtn = modal.querySelector("#remove-image-btn");
+  if (existingRemoveBtn) {
+    existingRemoveBtn.onclick = () => {
+      hiddenInput.value = "";
+      uploadArea.innerHTML = `<div class="image-placeholder">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/></svg>
+        <span>Click or drag to upload image</span>
+        <small>PNG, JPG, WEBP supported</small>
+      </div>`;
+      existingRemoveBtn.remove();
+    };
+  }
   modal.querySelector("#product-form").addEventListener("submit", (event) => {
     event.preventDefault();
     const data = new FormData(event.currentTarget);
@@ -573,7 +660,7 @@ function openProductModal(id) {
       price: Math.max(0, Number(data.get("price")) || 0),
       stock: Math.max(0, Math.floor(Number(data.get("stock")) || 0)),
       reorder: Math.max(0, Math.floor(Number(data.get("reorder")) || 0)),
-      color: data.get("color") || "#ffffff",
+      image: data.get("image") || "",
       notes: data.get("notes").trim(),
     };
     if (!next.name || !next.sku || !next.barcode) return toast("Name, SKU, and barcode are required.");
@@ -589,63 +676,17 @@ function openProductModal(id) {
   });
 }
 
-async function clearAllSales() {
-  if (!confirm("Delete ALL sales history permanently? This cannot be undone.")) return;
-  state.sales = [];
-  localStorage.removeItem(SALES_KEY);
-  try {
-    const snap = await db.collection("sales").get();
-    for (const doc of snap.docs) await doc.ref.delete();
-  } catch (e) {
-    console.log("Firebase clear sales failed", e);
-  }
-  render();
-  toast("All sales cleared");
-}
-
-async function clearAllData() {
-  if (!confirm("WARNING: This will delete ALL products AND sales permanently!")) return;
-  state.products = [];
-  state.sales = [];
-  state.cart = {};
-  state.labelIds = new Set();
-  localStorage.removeItem(STORAGE_KEY);
-  localStorage.removeItem(SALES_KEY);
-  try {
-    const prodSnap = await db.collection("products").get();
-    for (const doc of prodSnap.docs) await doc.ref.delete();
-    const salesSnap = await db.collection("sales").get();
-    for (const doc of salesSnap.docs) await doc.ref.delete();
-  } catch (e) {
-    console.log("Firebase clear all failed", e);
-  }
-  render();
-  toast("All data cleared");
-}
-
-
-
 function field(label, name, value, type, required) {
   return `<div class="field"><label>${label}</label><input class="input" name="${name}" type="${type}" value="${escapeHtml(value)}" ${required ? "required" : ""} ${type === "number" ? "step='0.01'" : ""}/></div>`;
 }
 
-async function deleteProduct(id) {
+function deleteProduct(id) {
   const product = state.products.find((p) => p.id === id);
   if (!product || !confirm(`Delete ${product.name}?`)) return;
   state.products = state.products.filter((p) => p.id !== id);
   delete state.cart[id];
   state.labelIds.delete(id);
-
-  // Remove from localStorage
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state.products));
-
-  // Remove from Firebase
-  try {
-    await db.collection("products").doc(id).delete();
-  } catch (e) {
-    console.log("Firebase delete failed", e);
-  }
-
+  save();
   render();
   toast("Product deleted");
 }
@@ -731,4 +772,3 @@ function toast(message) {
 }
 
 load().then(() => render());
-
