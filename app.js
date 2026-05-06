@@ -48,7 +48,7 @@ function renderLogin(errorMsg) {
     document.body.prepend(appContainer);
   }
 
-  // 2. Clear the container instead of immediately nuking document.body
+  // 2. Clear the container
   appContainer.innerHTML = "";
 
   // 3. Set the login HTML
@@ -66,12 +66,11 @@ function renderLogin(errorMsg) {
       '</div>' +
     '</div>';
 
-  // 4. Re-bind the event listener after the HTML is injected
+  // 4. Re-bind the event listener
   const loginBtn = document.getElementById("google-signin-btn");
   if (loginBtn) {
     loginBtn.addEventListener("click", function() {
       auth.signInWithRedirect(provider);
-      });
     });
   }
 }
