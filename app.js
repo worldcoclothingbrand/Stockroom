@@ -493,6 +493,7 @@ function handleAction(action, id) {
    if (action === "clear-cart") {
     state.cart = {};
     render();
+   }
   if (action === "clear-all-sales") clearAllSales();
   if (action === "clear-all-data") clearAllData();
 
@@ -730,4 +731,4 @@ function toast(message) {
 }
 
 load().then(() => render());
-}
+
