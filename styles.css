@@ -771,3 +771,24 @@ body {
     min-height: 44px;
   }
 }
+
+/* Hide hamburger + overlay on desktop */
+.hamburger,
+.sidebar-overlay {
+  display: none;
+}
+
+/* Mobile only */
+@media (max-width: 900px) {
+  .hamburger {
+    display: flex;
+  }
+
+  .sidebar-overlay {
+    display: none;
+  }
+
+  .sidebar-overlay.open {
+    display: block;
+  }
+}
