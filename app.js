@@ -730,3 +730,4 @@ function toast(message) {
 }
 
 load().then(() => render());
+}
