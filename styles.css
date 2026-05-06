@@ -660,11 +660,7 @@ tr:hover td {
 
   .shell,
   .modal-backdrop,
-  .toast,
-  .sidebar,
-  .topbar,
-  .stats,
-  .panel-head button {
+  .toast {
     display: none !important;
   }
 
