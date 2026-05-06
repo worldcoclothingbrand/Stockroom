@@ -738,3 +738,4 @@ window.addEventListener('DOMContentLoaded', () => {
     load().then(function() { render(); }).catch(function(e) { console.error(e); render(); });
   });
 });
+}
