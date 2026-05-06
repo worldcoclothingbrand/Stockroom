@@ -1,9 +1,7 @@
 const STORAGE_KEY = "stockroom.inventory.v1";
-const SALES_KEY = "stockroom.sales.v1";
-
-// ==================== FIREBASE SETUP ====================
-const firebaseConfig = {
-  apiKey: "AIzaSyDdoRoZfBWZWb8G0MExsbD4KarmB8qZG6c",
+const SALES_KEY = "stockroom.sales.v1";app.js:642 Uncaught ReferenceError: modal is not defined
+    at handleAction (app.js:642:22)
+    at HTMLButtonElement.<anonymous> (app.js:496:44)
   authDomain: "stockroom-a48c3.firebaseapp.com",
   projectId: "stockroom-a48c3",
   storageBucket: "stockroom-a48c3.firebasestorage.app",
@@ -637,7 +635,7 @@ function openProductModal(id) {
     modal.querySelector(".barcode-wrap").innerHTML = barcodeSvg(event.target.value);
   });
   
-}
+
   // Image upload logic
   const uploadArea = modal.querySelector("#image-upload-area");
   const fileInput = modal.querySelector("#image-file-input");
