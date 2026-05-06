@@ -70,9 +70,7 @@ function renderLogin(errorMsg) {
   const loginBtn = document.getElementById("google-signin-btn");
   if (loginBtn) {
     loginBtn.addEventListener("click", function() {
-      auth.signInWithPopup(provider).catch(function(err) {
-        renderLogin("Sign-in failed. Please try again.");
-        console.error(err);
+      auth.signInWithRedirect(provider);
       });
     });
   }
