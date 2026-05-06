@@ -582,7 +582,7 @@ function openProductModal(id) {
   modal.addEventListener("click", (event) => {
     if (event.target === modal) modal.remove();
   });
-  modal.querySelector("[name='barcode']").addEventListener("input", (event)) => {
+  modal.querySelector("[name='barcode']").addEventListener("input", (event) => {
     modal.querySelector(".barcode-wrap").innerHTML = barcodeSvg(event.target.value);
   }
   // ===== CLEAR SALES =====
