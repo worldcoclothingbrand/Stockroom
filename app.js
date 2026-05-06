@@ -73,7 +73,7 @@ function renderLogin(errorMsg) {
       auth.signInWithRedirect(provider);
     });
   }
-
+}
 
 function renderAccessDenied(email) {
   document.body.innerHTML =
@@ -92,30 +92,30 @@ function renderAccessDenied(email) {
 }
 
 // Watch auth state — this is the gatekeeper
-auth.onAuthStateChanged(function(user) {
-  if (!user) {
-    // Not signed in → show login
-    currentUser = null;
-    renderLogin();
-    return;
-  }
+window.addEventListener('DOMContentLoaded', () => {
+  auth.onAuthStateChanged(function(user) {
+    if (!user) {
+      currentUser = null;
+      renderLogin();
+      return;
+    }
 
-  if (user.email !== ALLOWED_EMAIL) {
-    // Wrong account → block immediately
-    currentUser = null;
-    renderAccessDenied(user.email);
-    return;
-  }
+    if (user.email !== ALLOWED_EMAIL) {
+      currentUser = null;
+      renderAccessDenied(user.email);
+      return;
+    }
 
-  // Authorised ✓
-  currentUser = user;
-  // Restore app container if we replaced body innerHTML
-  if (!document.getElementById("app")) {
-    document.body.innerHTML = '<div id="app"></div>';
-  }
-  load().then(function() { render(); }).catch(function(e) { console.error(e); render(); });
+    currentUser = user;
+    
+    // Ensure the #app div exists
+    if (!document.getElementById("app")) {
+      document.body.innerHTML = '<div id="app"></div>';
+    }
+    
+    load().then(function() { render(); }).catch(function(e) { console.error(e); render(); });
+  });
 });
-
 // ── Data ──────────────────────────────────────────────────
 
 async function load() {
@@ -713,29 +713,4 @@ function toast(msg) {
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 2600);
 }
-// Wrap the auth listener so it waits for the HTML to be ready
-window.addEventListener('DOMContentLoaded', () => {
-  auth.onAuthStateChanged(function(user) {
-    if (!user) {
-      currentUser = null;
-      renderLogin();
-      return;
-    }
-
-    if (user.email !== ALLOWED_EMAIL) {
-      currentUser = null;
-      renderAccessDenied(user.email);
-      return;
-    }
-
-    currentUser = user;
-    
-    // Ensure the #app div exists
-    if (!document.getElementById("app")) {
-      document.body.innerHTML = '<div id="app"></div>';
-    }
-    
-    load().then(function() { render(); }).catch(function(e) { console.error(e); render(); });
-  });
 });
-}
