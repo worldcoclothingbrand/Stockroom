@@ -26,10 +26,93 @@ body {
 button, input, select, textarea { font: inherit; }
 button { border: 0; cursor: pointer; }
 
+/* ── Login screen ───────────────────────────────────────── */
+
+.login-screen {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+}
+
+.login-card {
+  width: min(400px, 100%);
+  background: rgba(22, 22, 24, 0.95);
+  border: 1px solid var(--line-strong);
+  border-radius: 16px;
+  padding: 40px 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  box-shadow: 0 40px 100px rgba(0,0,0,0.5);
+  text-align: center;
+}
+
+.login-mark {
+  width: 56px;
+  height: 56px;
+  border-radius: 14px;
+  background: #fff;
+  color: #000;
+  font-weight: 800;
+  font-size: 24px;
+  display: grid;
+  place-items: center;
+  margin-bottom: 4px;
+}
+
+.login-title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+}
+
+.login-sub {
+  margin: 0;
+  color: var(--muted);
+  font-size: 14px;
+}
+
+.login-error {
+  margin: 0;
+  color: #ff5c7a;
+  font-size: 13px;
+  background: rgba(255,92,122,0.1);
+  border: 1px solid rgba(255,92,122,0.3);
+  border-radius: var(--radius);
+  padding: 8px 12px;
+  width: 100%;
+}
+
+.login-btn {
+  margin-top: 8px;
+  width: 100%;
+  min-height: 46px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line-strong);
+  background: rgba(255,255,255,0.07);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.18s;
+}
+
+.login-btn:hover {
+  background: rgba(255,255,255,0.13);
+  transform: translateY(-1px);
+}
+
 /* ── Hamburger — hidden on desktop ─────────────────────── */
 
 .hamburger {
-  display: none; /* shown only in mobile media query */
+  display: none;
   position: fixed;
   top: 14px;
   left: 14px;
@@ -47,7 +130,7 @@ button { border: 0; cursor: pointer; }
 }
 
 .sidebar-overlay {
-  display: none; /* shown only when .open on mobile */
+  display: none;
   position: fixed;
   inset: 0;
   background: rgba(0,0,0,0.6);
@@ -219,11 +302,7 @@ button { border: 0; cursor: pointer; }
 
 .textarea { min-height: 76px; padding: 10px 12px; resize: vertical; }
 
-.color-input {
-  padding: 2px 4px;
-  height: 42px;
-  cursor: pointer;
-}
+.color-input { padding: 2px 4px; height: 42px; cursor: pointer; }
 
 /* ── Table ──────────────────────────────────────────────── */
 
@@ -350,7 +429,7 @@ tr:hover td { background: rgba(255,255,255,0.035); }
 
 @media print {
   body { min-width: 0; background: #fff; }
-  .hamburger, .sidebar-overlay, .shell, .modal-backdrop, .toast { display: none !important; }
+  .hamburger, .sidebar-overlay, .shell, .modal-backdrop, .toast, .login-screen { display: none !important; }
   #print-area {
     display: grid !important;
     grid-template-columns: repeat(3, 2.25in);
@@ -360,16 +439,14 @@ tr:hover td { background: rgba(255,255,255,0.035); }
 }
 
 /* ══════════════════════════════════════════════════════════
-   MOBILE  — only activates on screens ≤ 768 px
-   Desktop layout is completely untouched above this point.
+   MOBILE — only activates on screens ≤ 768px
+   Desktop is completely untouched above this point.
 ══════════════════════════════════════════════════════════ */
 
 @media (max-width: 768px) {
 
-  /* Show hamburger button */
   .hamburger { display: flex; }
 
-  /* Sidebar slides in from left as a drawer */
   .shell { grid-template-columns: 1fr; }
 
   .sidebar {
@@ -382,22 +459,18 @@ tr:hover td { background: rgba(255,255,255,0.035); }
   }
 
   .sidebar.open { transform: translateX(0); }
-
   .sidebar-overlay.open { display: block; }
 
-  /* Push content below the hamburger button */
   .main { padding: 70px 14px 24px; }
 
-  /* Page title smaller */
   .title-block h2 { font-size: 22px; }
 
-  /* Topbar stacks */
   .topbar { flex-direction: column; align-items: flex-start; gap: 10px; }
   .actions { width: 100%; }
   .actions .ghost-button,
   .actions .primary-button { flex: 1; justify-content: center; }
 
-  /* ── Stats: 2 × 2 grid on mobile ── */
+  /* 2×2 stats grid */
   .stats {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
@@ -406,22 +479,17 @@ tr:hover td { background: rgba(255,255,255,0.035); }
   .stat strong { font-size: 20px; margin-top: 6px; }
   .stat span   { font-size: 11px; }
 
-  /* Workspace panels stack vertically */
   .workspace { grid-template-columns: 1fr; }
 
-  /* Search row stacks */
   .search-row { grid-template-columns: 1fr; gap: 8px; }
 
-  /* Product table: hide less-critical columns on mobile */
+  /* Hide less-critical columns */
   .hide-mobile { display: none; }
 
-  /* Table still scrolls if needed */
   .table-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
 
-  /* Tighter table cells */
   th, td { padding: 10px 10px; }
 
-  /* Action buttons still fit in a row */
   .table-actions { gap: 4px; flex-wrap: nowrap; }
   .icon-button   { width: 34px; min-height: 34px; }
 
@@ -429,9 +497,11 @@ tr:hover td { background: rgba(255,255,255,0.035); }
   .modal-backdrop { padding: 0; align-items: flex-end; }
   .modal { width: 100%; max-height: 92vh; border-radius: 16px 16px 0 0; }
 
-  /* Form single column */
   .form-grid { grid-template-columns: 1fr; }
   .field.full { grid-column: 1; }
 
   .panel-head { flex-wrap: wrap; }
+
+  /* Login card full width on small screens */
+  .login-card { padding: 32px 20px; }
 }
