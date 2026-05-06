@@ -52,7 +52,7 @@ function renderLogin(errorMsg) {
   appContainer.innerHTML = "";
 
   // 3. Set the login HTML
-  document.body.innerHTML =
+  appContainer.innerHTML =
     '<div class="login-screen">' +
       '<div class="login-card">' +
         '<div class="login-mark">S</div>' +
@@ -76,7 +76,7 @@ function renderLogin(errorMsg) {
 }
 
 function renderAccessDenied(email) {
-  document.body.innerHTML =
+  document.querySelector("#app").innerHTML =
     '<div class="login-screen">' +
       '<div class="login-card">' +
         '<div class="login-mark" style="background:#ff5c7a;color:#fff;">✕</div>' +
