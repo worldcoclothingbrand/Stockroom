@@ -420,7 +420,7 @@ function renderReports(t) {
         <div class="panel-head">
           <div><h3>Inventory value leaders</h3><p>Highest retail value currently on hand.</p></div>
           <button class="ghost-button" style="color:#D12300; margin-left:auto;" 
-  onclick="if(confirm('Delete ALL sales history permanently? This cannot be undone.')){localStorage.removeItem('stockroom.sales.v1');location.reload();}">
+  onclick="if(confirm('Delete ALL sales history permanently?')){db.collection('sales').get().then(snap=>snap.forEach(doc=>doc.ref.delete()));localStorage.removeItem('stockroom.sales.v1');location.reload();}">
   Clear All Sales
 </button>
 
