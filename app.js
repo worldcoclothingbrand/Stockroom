@@ -44,19 +44,19 @@ async function load() {
   } catch(e) {}
 
   // Load from Firebase
-  try {
-    const prodSnap = await db.collection("products").get();
-    if (!prodSnap.empty) {
-      state.products = prodSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    }
-
-    const salesSnap = await db.collection("sales").get();
-    if (!salesSnap.empty) {
-      state.sales = salesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-    }
-  } catch (e) {
-    console.log("Firebase load failed, using local data");
+ try {
+  const prodSnap = await db.collection("products").get();
+  if (!prodSnap.empty) {
+    state.products = prodSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
   }
+  const salesSnap = await db.collection("sales").get();
+  if (!salesSnap.empty) {
+    state.sales = salesSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+  }
+} catch (e) {
+  console.log("Firebase blocked or unavailable, using local data");
+}
+  
 }
 
 async function save() {
