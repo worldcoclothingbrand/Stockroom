@@ -701,3 +701,28 @@ function toast(msg) {
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 2600);
 }
+// Wrap the auth listener so it waits for the HTML to be ready
+window.addEventListener('DOMContentLoaded', () => {
+  auth.onAuthStateChanged(function(user) {
+    if (!user) {
+      currentUser = null;
+      renderLogin();
+      return;
+    }
+
+    if (user.email !== ALLOWED_EMAIL) {
+      currentUser = null;
+      renderAccessDenied(user.email);
+      return;
+    }
+
+    currentUser = user;
+    
+    // Ensure the #app div exists
+    if (!document.getElementById("app")) {
+      document.body.innerHTML = '<div id="app"></div>';
+    }
+    
+    load().then(function() { render(); }).catch(function(e) { console.error(e); render(); });
+  });
+});
