@@ -584,7 +584,53 @@ function openProductModal(id) {
   });
   modal.querySelector("[name='barcode']").addEventListener("input", (event) => {
     modal.querySelector(".barcode-wrap").innerHTML = barcodeSvg(event.target.value);
+  }
+  // 🔥 CLEAR ALL SALES
+if (action === "clear-sales") {
+  if (!confirm("Delete ALL sales permanently? This cannot be undone.")) return;
+
+  state.sales = [];
+  localStorage.removeItem(SALES_KEY);
+
+  db.collection("sales").get().then((snap) => {
+    const batch = db.batch();
+    snap.forEach((doc) => batch.delete(doc.ref));
+    return batch.commit();
+  }).then(() => {
+    render();
+    toast("All sales deleted");
+  }).catch(() => {
+    toast("Failed to clear sales");
   });
+}
+
+  // 🔥 CLEAR EVERYTHING
+  if (action === "clear-all") {
+    if (!confirm("WARNING: This deletes EVERYTHING permanently")) return;
+
+    state.products = [];
+    state.sales = [];
+    state.cart = {};
+
+    localStorage.removeItem(STORAGE_KEY);
+    localStorage.removeItem(SALES_KEY);
+
+    Promise.all([
+      db.collection("products").get(),
+      db.collection("sales").get()
+    ]).then(([prodSnap, salesSnap]) => {
+      const batch = db.batch();
+      prodSnap.forEach(doc => batch.delete(doc.ref));
+      salesSnap.forEach(doc => batch.delete(doc.ref));
+      return batch.commit();
+    }).then(() => {
+      render();
+      toast("All data wiped");
+    }).catch(() => {
+      toast("Failed to wipe data");
+    });
+  }
+);
 
   // Image upload logic
   const uploadArea = modal.querySelector("#image-upload-area");
