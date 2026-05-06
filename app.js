@@ -40,7 +40,18 @@ function uid() {
 // ── Auth ──────────────────────────────────────────────────
 
 function renderLogin(errorMsg) {
-  document.querySelector("#app").innerHTML = "";
+  // 1. Safety check: ensure the #app container exists or create it
+  let appContainer = document.querySelector("#app");
+  if (!appContainer) {
+    appContainer = document.createElement("div");
+    appContainer.id = "app";
+    document.body.prepend(appContainer);
+  }
+
+  // 2. Clear the container instead of immediately nuking document.body
+  appContainer.innerHTML = "";
+
+  // 3. Set the login HTML
   document.body.innerHTML =
     '<div class="login-screen">' +
       '<div class="login-card">' +
@@ -55,12 +66,16 @@ function renderLogin(errorMsg) {
       '</div>' +
     '</div>';
 
-  document.getElementById("google-signin-btn").addEventListener("click", function() {
-    auth.signInWithPopup(provider).catch(function(err) {
-      renderLogin("Sign-in failed. Please try again.");
-      console.error(err);
+  // 4. Re-bind the event listener after the HTML is injected
+  const loginBtn = document.getElementById("google-signin-btn");
+  if (loginBtn) {
+    loginBtn.addEventListener("click", function() {
+      auth.signInWithPopup(provider).catch(function(err) {
+        renderLogin("Sign-in failed. Please try again.");
+        console.error(err);
+      });
     });
-  });
+  }
 }
 
 function renderAccessDenied(email) {
