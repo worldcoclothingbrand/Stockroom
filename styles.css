@@ -793,9 +793,12 @@ body {
   }
 
   @media (max-width: 900px) {
-  .stat {
-    padding: 14px;
+  .stats {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px;
   }
+}
 
   .stat strong {
     font-size: 22px;
