@@ -515,6 +515,57 @@ function handleAction(action, id) {
   }
   if (action === "print-labels") printLabels();
   if (action === "export") exportData();
+
+  // ===== CLEAR SALES =====
+if (action === "clear-sales") {
+  if (!confirm("Delete ALL sales permanently?")) return;
+
+  state.sales = [];
+  localStorage.removeItem(SALES_KEY);
+
+  db.collection("sales").get().then(function (snap) {
+    var batch = db.batch();
+
+    snap.forEach(function (doc) {
+      batch.delete(doc.ref);
+    });
+
+    return batch.commit();
+  }).then(function () {
+    render();
+    toast("All sales deleted");
+  });
+}
+
+// ===== CLEAR ALL DATA =====
+if (action === "clear-all") {
+  if (!confirm("Delete EVERYTHING permanently?")) return;
+
+  state.products = [];
+  state.sales = [];
+  state.cart = {};
+
+  localStorage.removeItem(STORAGE_KEY);
+  localStorage.removeItem(SALES_KEY);
+
+  db.collection("products").get().then(function (prodSnap) {
+    return db.collection("sales").get().then(function (salesSnap) {
+      var batch = db.batch();
+
+      prodSnap.forEach(function (doc) {
+        batch.delete(doc.ref);
+      });
+
+      salesSnap.forEach(function (doc) {
+        batch.delete(doc.ref);
+      });
+
+      return batch.commit();
+    });
+  }).then(function () {
+    render();
+    toast("All data cleared");
+  });
 }
 
 function nextBarcode() {
@@ -585,56 +636,7 @@ function openProductModal(id) {
   modal.querySelector("[name='barcode']").addEventListener("input", (event) => {
     modal.querySelector(".barcode-wrap").innerHTML = barcodeSvg(event.target.value);
   }
-  // ===== CLEAR SALES =====
-if (action === "clear-sales") {
-  if (!confirm("Delete ALL sales permanently?")) return;
-
-  state.sales = [];
-  localStorage.removeItem(SALES_KEY);
-
-  db.collection("sales").get().then(function (snap) {
-    var batch = db.batch();
-
-    snap.forEach(function (doc) {
-      batch.delete(doc.ref);
-    });
-
-    return batch.commit();
-  }).then(function () {
-    render();
-    toast("All sales deleted");
-  });
-}
-
-// ===== CLEAR ALL DATA =====
-if (action === "clear-all") {
-  if (!confirm("Delete EVERYTHING permanently?")) return;
-
-  state.products = [];
-  state.sales = [];
-  state.cart = {};
-
-  localStorage.removeItem(STORAGE_KEY);
-  localStorage.removeItem(SALES_KEY);
-
-  db.collection("products").get().then(function (prodSnap) {
-    return db.collection("sales").get().then(function (salesSnap) {
-      var batch = db.batch();
-
-      prodSnap.forEach(function (doc) {
-        batch.delete(doc.ref);
-      });
-
-      salesSnap.forEach(function (doc) {
-        batch.delete(doc.ref);
-      });
-
-      return batch.commit();
-    });
-  }).then(function () {
-    render();
-    toast("All data cleared");
-  });
+  
 }
   // Image upload logic
   const uploadArea = modal.querySelector("#image-upload-area");
