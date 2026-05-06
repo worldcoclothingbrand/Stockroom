@@ -77,72 +77,68 @@ function ensureApp() {
 }
 
 // ── Auth ──────────────────────────────────────────────────
+
+const auth = firebase.auth();
+
+auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
+  .then(() => {
+    console.log("AUTH PERSISTENCE READY");
+
+    auth.onAuthStateChanged(async (user) => {
+      console.log("AUTH STATE:", user);
+
+      if (!user) {
+        currentUser = null;
+        renderLogin();
+        return;
+      }
+
+      const email = (user.email || "").toLowerCase().trim();
+
+      if (email !== ALLOWED_EMAIL.toLowerCase().trim()) {
+        currentUser = null;
+
+        renderAccessDenied(user.email || "Unknown");
+
+        await auth.signOut();
+
+        return;
+      }
+
+      currentUser = user;
+
+      try {
+        await load();
+      } catch (e) {
+        console.error("LOAD ERROR:", e);
+      }
+
+      render();
+    });
+
+    startAuth();
+  })
+  .catch((err) => {
+    console.error("PERSISTENCE ERROR:", err);
+  });
+
 async function startAuth() {
   console.log("START AUTH");
 
-  const app = ensureApp();
-
-  app.innerHTML =
-    '<div class="login-screen">' +
-      '<div class="login-card">' +
-        '<div class="login-mark">S</div>' +
-        '<h1 class="login-title">Stockroom</h1>' +
-        '<p class="login-sub">Checking authentication...</p>' +
-      '</div>' +
-    '</div>';
-
   try {
-    const redirectResult = await auth.getRedirectResult();
+    const result = await auth.getRedirectResult();
 
-    if (redirectResult.user) {
-      console.log("REDIRECT SUCCESS:", redirectResult.user.email);
+    console.log("REDIRECT RESULT:", result);
+
+    if (result.user) {
+      console.log("SIGNED IN:", result.user.email);
     } else {
       console.log("NO REDIRECT USER");
     }
+
   } catch (err) {
     console.error("REDIRECT ERROR:", err);
-    renderLogin("Google sign in failed.");
   }
-
-  auth.onAuthStateChanged(async (user) => {
-    console.log("AUTH STATE:", user);
-
-    if (!user) {
-      currentUser = null;
-      renderLogin();
-      return;
-    }
-
-    const email = (user.email || "").toLowerCase().trim();
-    const allowed = ALLOWED_EMAIL.toLowerCase().trim();
-
-    console.log("USER:", email);
-    console.log("ALLOWED:", allowed);
-
-    if (email !== allowed) {
-      currentUser = null;
-
-      renderAccessDenied(user.email || "Unknown email");
-
-      try {
-        await auth.signOut();
-      } catch (e) {
-        console.error("SIGN OUT ERROR:", e);
-      }
-
-      return;
-    }
-
-    currentUser = user;
-
-    try {
-      await load();
-    } catch (e) {
-      console.error("LOAD ERROR:", e);
-    }
-
-    render();
-  });
 }
 
 function renderLogin(errorMsg = "") {
@@ -151,63 +147,32 @@ function renderLogin(errorMsg = "") {
   app.innerHTML =
     '<div class="login-screen">' +
       '<div class="login-card">' +
-        '<div class="login-mark">S</div>' +
-        '<h1 class="login-title">Stockroom</h1>' +
-        '<p class="login-sub">Sign in to continue</p>' +
+        '<h1>Stockroom</h1>' +
 
         (errorMsg
           ? '<p class="login-error">' + escapeHtml(errorMsg) + '</p>'
-          : "") +
+          : '') +
 
-        '<button class="login-btn" id="google-login-btn">' +
-          'Sign in with Google' +
+        '<button id="google-login-btn">' +
+          'Sign In With Google' +
         '</button>' +
       '</div>' +
     '</div>';
 
-  const btn = document.getElementById("google-login-btn");
+  document
+    .getElementById("google-login-btn")
+    .onclick = async () => {
 
-  if (btn) {
-    btn.onclick = async () => {
       try {
-        console.log("STARTING REDIRECT");
+        console.log("START GOOGLE LOGIN");
+
         await auth.signInWithRedirect(provider);
+
       } catch (e) {
         console.error("LOGIN ERROR:", e);
-        toast("Google sign in failed");
       }
+
     };
-  }
-}
-
-function renderAccessDenied(email) {
-  const app = ensureApp();
-
-  app.innerHTML =
-    '<div class="login-screen">' +
-      '<div class="login-card">' +
-        '<div class="login-mark" style="background:#ff5c7a;color:white;">✕</div>' +
-        '<h1 class="login-title">Access Denied</h1>' +
-        '<p class="login-sub">This Google account is not authorized.</p>' +
-        '<p class="login-error">' + escapeHtml(email) + '</p>' +
-        '<button class="login-btn" id="retry-login-btn">' +
-          'Try Another Account' +
-        '</button>' +
-      '</div>' +
-    '</div>';
-
-  const btn = document.getElementById("retry-login-btn");
-
-  if (btn) {
-    btn.onclick = async () => {
-      try {
-        await auth.signOut();
-        await auth.signInWithRedirect(provider);
-      } catch (e) {
-        console.error(e);
-      }
-    };
-  }
 }
 
 // ── Data ──────────────────────────────────────────────────
