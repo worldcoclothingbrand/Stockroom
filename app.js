@@ -73,7 +73,7 @@ function renderLogin(errorMsg) {
       auth.signInWithRedirect(provider);
     });
   }
-}
+
 
 function renderAccessDenied(email) {
   document.body.innerHTML =
