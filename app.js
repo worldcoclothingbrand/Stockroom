@@ -121,35 +121,47 @@ function renderAccessDenied(email) {
     });
 }
 
-window.addEventListener("DOMContentLoaded", function() {
+window.addEventListener("DOMContentLoaded", function () {
 
-  ensureApp();
+  console.log("DOM loaded");
 
   auth.onAuthStateChanged(function(user) {
 
+    console.log("AUTH STATE:", user);
+
     if (!user) {
+      console.log("NO USER");
       currentUser = null;
       renderLogin();
       return;
     }
 
+    console.log("USER EMAIL:", user.email);
+    console.log("ALLOWED EMAIL:", ALLOWED_EMAIL);
+
     if (
       !user.email ||
-      user.email.toLowerCase() !== ALLOWED_EMAIL.toLowerCase()
+      user.email.toLowerCase().trim() !==
+      ALLOWED_EMAIL.toLowerCase().trim()
     ) {
+      console.log("ACCESS DENIED");
+
       currentUser = null;
       renderAccessDenied(user.email || "Unknown email");
       return;
     }
 
+    console.log("ACCESS GRANTED");
+
     currentUser = user;
 
     load()
-      .then(function() {
+      .then(function () {
+        console.log("LOAD COMPLETE");
         render();
       })
-      .catch(function(error) {
-        console.error(error);
+      .catch(function (e) {
+        console.error("LOAD ERROR:", e);
         render();
       });
 
