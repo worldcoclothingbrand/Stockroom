@@ -585,24 +585,28 @@ function openProductModal(id) {
   modal.querySelector("[name='barcode']").addEventListener("input", (event)) => {
     modal.querySelector(".barcode-wrap").innerHTML = barcodeSvg(event.target.value);
   }
-  // ===== FIX: CLEAR SALES =====
+  // ===== CLEAR SALES =====
 if (action === "clear-sales") {
   if (!confirm("Delete ALL sales permanently?")) return;
 
   state.sales = [];
   localStorage.removeItem(SALES_KEY);
 
-  db.collection("sales").get().then((snap) => {
-    const batch = db.batch();
-    snap.forEach((doc) => batch.delete(doc.ref));
+  db.collection("sales").get().then(function (snap) {
+    var batch = db.batch();
+
+    snap.forEach(function (doc) {
+      batch.delete(doc.ref);
+    });
+
     return batch.commit();
-  }).then(() => {
+  }).then(function () {
     render();
     toast("All sales deleted");
   });
 }
 
-// ===== FIX: CLEAR ALL =====
+// ===== CLEAR ALL DATA =====
 if (action === "clear-all") {
   if (!confirm("Delete EVERYTHING permanently?")) return;
 
@@ -613,20 +617,25 @@ if (action === "clear-all") {
   localStorage.removeItem(STORAGE_KEY);
   localStorage.removeItem(SALES_KEY);
 
-  Promise.all([
-    db.collection("products").get(),
-    db.collection("sales").get()
-  ]).then(([prodSnap, salesSnap]) => {
-    const batch = db.batch();
-    prodSnap.forEach(doc => batch.delete(doc.ref));
-    salesSnap.forEach(doc => batch.delete(doc.ref));
-    return batch.commit();
-  }).then(() => {
+  db.collection("products").get().then(function (prodSnap) {
+    return db.collection("sales").get().then(function (salesSnap) {
+      var batch = db.batch();
+
+      prodSnap.forEach(function (doc) {
+        batch.delete(doc.ref);
+      });
+
+      salesSnap.forEach(function (doc) {
+        batch.delete(doc.ref);
+      });
+
+      return batch.commit();
+    });
+  }).then(function () {
     render();
     toast("All data cleared");
   });
 }
-
   // Image upload logic
   const uploadArea = modal.querySelector("#image-upload-area");
   const fileInput = modal.querySelector("#image-file-input");
