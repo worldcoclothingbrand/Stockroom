@@ -1,5 +1,6 @@
-const STORAGE_KEY = "stockroom.inventory.v1";
-const SALES_KEY   = "stockroom.sales.v1";
+const STORAGE_KEY   = "stockroom.inventory.v1";
+const SALES_KEY     = "stockroom.sales.v1";
+const ALLOWED_EMAIL = "worldcoclothingbrand@gmail.com";
 
 // ── Firebase ──────────────────────────────────────────────
 const firebaseConfig = {
@@ -11,10 +12,13 @@ const firebaseConfig = {
   appId: "1:629513576568:web:ca15a5bed03c4877e34d8d"
 };
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const db       = firebase.firestore();
+const auth     = firebase.auth();
+const provider = new firebase.auth.GoogleAuthProvider();
 // ─────────────────────────────────────────────────────────
 
 let filterTimer;
+let currentUser = null;
 
 const state = {
   tab: "inventory",
@@ -33,10 +37,76 @@ function uid() {
     : "id-" + Date.now() + "-" + Math.random().toString(16).slice(2);
 }
 
+// ── Auth ──────────────────────────────────────────────────
+
+function renderLogin(errorMsg) {
+  document.querySelector("#app").innerHTML = "";
+  document.body.innerHTML =
+    '<div class="login-screen">' +
+      '<div class="login-card">' +
+        '<div class="login-mark">S</div>' +
+        '<h1 class="login-title">Stockroom</h1>' +
+        '<p class="login-sub">Sign in to access your inventory</p>' +
+        (errorMsg ? '<p class="login-error">' + escapeHtml(errorMsg) + '</p>' : "") +
+        '<button class="login-btn" id="google-signin-btn">' +
+          '<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>' +
+          'Sign in with Google' +
+        '</button>' +
+      '</div>' +
+    '</div>';
+
+  document.getElementById("google-signin-btn").addEventListener("click", function() {
+    auth.signInWithPopup(provider).catch(function(err) {
+      renderLogin("Sign-in failed. Please try again.");
+      console.error(err);
+    });
+  });
+}
+
+function renderAccessDenied(email) {
+  document.body.innerHTML =
+    '<div class="login-screen">' +
+      '<div class="login-card">' +
+        '<div class="login-mark" style="background:#ff5c7a;color:#fff;">✕</div>' +
+        '<h1 class="login-title">Access Denied</h1>' +
+        '<p class="login-sub">This account is not authorized.</p>' +
+        '<p class="login-error">' + escapeHtml(email) + '</p>' +
+        '<button class="login-btn" id="signout-denied-btn" style="margin-top:8px;">Sign out &amp; try another account</button>' +
+      '</div>' +
+    '</div>';
+  document.getElementById("signout-denied-btn").addEventListener("click", function() {
+    auth.signOut();
+  });
+}
+
+// Watch auth state — this is the gatekeeper
+auth.onAuthStateChanged(function(user) {
+  if (!user) {
+    // Not signed in → show login
+    currentUser = null;
+    renderLogin();
+    return;
+  }
+
+  if (user.email !== ALLOWED_EMAIL) {
+    // Wrong account → block immediately
+    currentUser = null;
+    renderAccessDenied(user.email);
+    return;
+  }
+
+  // Authorised ✓
+  currentUser = user;
+  // Restore app container if we replaced body innerHTML
+  if (!document.getElementById("app")) {
+    document.body.innerHTML = '<div id="app"></div>';
+  }
+  load().then(function() { render(); }).catch(function(e) { console.error(e); render(); });
+});
+
 // ── Data ──────────────────────────────────────────────────
 
 async function load() {
-  // Seed from localStorage first so the page isn't blank while Firebase loads
   try {
     const ps = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
     const ss = JSON.parse(localStorage.getItem(SALES_KEY)   || "[]");
@@ -44,7 +114,6 @@ async function load() {
     if (Array.isArray(ss))              state.sales    = ss;
   } catch (e) {}
 
-  // Override with Firebase (source of truth)
   try {
     const [pSnap, sSnap] = await Promise.all([
       db.collection("products").get(),
@@ -52,7 +121,6 @@ async function load() {
     ]);
     if (!pSnap.empty) state.products = pSnap.docs.map(d => Object.assign({ id: d.id }, d.data()));
     if (!sSnap.empty) state.sales    = sSnap.docs.map(d => Object.assign({ id: d.id }, d.data()));
-    // Sync back to localStorage
     localStorage.setItem(STORAGE_KEY, JSON.stringify(state.products));
     localStorage.setItem(SALES_KEY,   JSON.stringify(state.sales));
   } catch (e) {
@@ -82,11 +150,11 @@ async function deleteProduct(id) {
 }
 
 async function clearAllSales() {
-  if (!confirm("Delete ALL sales history permanently? This cannot be undone.")) return;
+  if (!confirm("Delete ALL sales history permanently?")) return;
   state.sales = [];
   localStorage.removeItem(SALES_KEY);
   try {
-    const snap = await db.collection("sales").get();
+    const snap  = await db.collection("sales").get();
     const batch = db.batch();
     snap.docs.forEach(doc => batch.delete(doc.ref));
     await batch.commit();
@@ -213,6 +281,7 @@ function icon(name) {
     minus:    "M5 12h14",
     download: "M12 3v12 M7 10l5 5 5-5 M5 21h14",
     menu:     "M3 6h18 M3 12h18 M3 18h18",
+    logout:   "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4 M16 17l5-5-5-5 M21 12H9",
   };
   return '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="' + I[name] + '"/></svg>';
 }
@@ -221,11 +290,11 @@ function icon(name) {
 
 function render() {
   const app = document.querySelector("#app");
+  if (!app) return;
   const t   = totals();
   const vis = filteredProducts();
 
   app.innerHTML =
-    // Hamburger — visible only on mobile via CSS
     '<button class="hamburger" id="hamburger-btn" aria-label="Open menu">' + icon("menu") + '</button>' +
     '<div class="sidebar-overlay" id="sidebar-overlay"></div>' +
     '<div class="shell">' +
@@ -237,7 +306,10 @@ function render() {
           navBtn("labels",    "barcode", "Labels") +
           navBtn("reports",   "chart",   "Reports") +
         '</nav>' +
-        '<div class="side-card"><p class="side-note">Data synced across devices via Firebase.</p></div>' +
+        '<div class="side-card">' +
+          '<p class="side-note">Signed in as<br><strong style="color:#fff;word-break:break-all;">' + escapeHtml(currentUser ? currentUser.email : "") + '</strong></p>' +
+          '<button class="ghost-button" data-action="signout" style="margin-top:10px;width:100%;">' + icon("logout") + 'Sign out</button>' +
+        '</div>' +
       '</aside>' +
       '<main class="main">' +
         '<div class="topbar">' +
@@ -328,8 +400,7 @@ function renderProductTable(products) {
     '<thead><tr>' +
       '<th>Product</th>' +
       '<th class="hide-mobile">Category</th>' +
-      '<th>Stock</th>' +
-      '<th>Price</th>' +
+      '<th>Stock</th><th>Price</th>' +
       '<th class="hide-mobile">Value</th>' +
       '<th class="hide-mobile">Barcode</th>' +
       '<th></th>' +
@@ -482,6 +553,7 @@ function handleAction(action, id) {
   if (action === "export")          exportData();
   if (action === "clear-all-sales") clearAllSales();
   if (action === "clear-all-data")  clearAllData();
+  if (action === "signout")         auth.signOut();
 }
 
 // ── Product modal ─────────────────────────────────────────
@@ -492,7 +564,7 @@ function nextBarcode() {
 }
 
 function field(label, name, value, type, required) {
-  return '<div class="field"><label>' + label + '</label><input class="input" name="' + name + '" type="' + type + '" value="' + escapeHtml(value) + '" ' + (required ? "required" : "") + ' ' + (type === "number" ? "step='0.01'" : "") + '/></div>';
+  return '<div class="field"><label>' + label + '</label><input class="input' + (type === "color" ? " color-input" : "") + '" name="' + name + '" type="' + type + '" value="' + escapeHtml(value) + '" ' + (required ? "required" : "") + ' ' + (type === "number" ? "step='0.01'" : "") + '/></div>';
 }
 
 function openProductModal(id) {
@@ -513,7 +585,7 @@ function openProductModal(id) {
         field("Price",         "price",    product.price,    "number", true)  +
         field("Stock",         "stock",    product.stock,    "number", true)  +
         field("Reorder level", "reorder",  product.reorder,  "number", true)  +
-        '<div class="field"><label>Color</label><input class="input color-input" name="color" type="color" value="' + escapeHtml(product.color || "#ffffff") + '"/></div>' +
+        field("Color",         "color",    product.color || "#ffffff", "color", false) +
         '<div class="field full"><label>Notes</label><textarea class="textarea" name="notes">' + escapeHtml(product.notes) + '</textarea></div>' +
         '<div class="field full"><label>Barcode preview</label><div class="barcode-wrap">' + barcodeSvg(product.barcode) + '</div></div>' +
       '</div></div>' +
@@ -629,7 +701,3 @@ function toast(msg) {
   document.body.appendChild(el);
   setTimeout(() => el.remove(), 2600);
 }
-
-// ── Boot ──────────────────────────────────────────────────
-
-load().then(() => render()).catch(e => { console.error(e); render(); });
