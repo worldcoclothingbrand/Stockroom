@@ -584,7 +584,7 @@ function openProductModal(id) {
   });
   modal.querySelector("[name='barcode']").addEventListener("input", (event) => {
     modal.querySelector(".barcode-wrap").innerHTML = barcodeSvg(event.target.value);
-  }
+  )}
   // 🔥 CLEAR ALL SALES
 if (action === "clear-sales") {
   if (!confirm("Delete ALL sales permanently? This cannot be undone.")) return;
