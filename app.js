@@ -36,11 +36,12 @@ function uid() {
 
 
 async function load() {
-  const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
-  const sales = JSON.parse(localStorage.getItem(SALES_KEY) || "[]");
-  
-  state.products = Array.isArray(stored) && stored.length ? stored : [];
-  state.sales = sales;
+  try {
+    const stored = JSON.parse(localStorage.getItem(STORAGE_KEY) || "null");
+    const sales = JSON.parse(localStorage.getItem(SALES_KEY) || "[]");
+    state.products = Array.isArray(stored) && stored.length ? stored : [];
+    state.sales = sales;
+  } catch(e) {}
 
   // Load from Firebase
   try {
@@ -771,4 +772,7 @@ function toast(message) {
   setTimeout(() => el.remove(), 2600);
 }
 
-load().then(() => render());
+load().then(() => render()).catch((e) => {
+  console.error("Load failed:", e);
+  render();
+});
