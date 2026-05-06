@@ -652,6 +652,7 @@ tr:hover td {
 }
 
 /* ============ PRINT ============ */
+@media print {
   body {
     min-width: 0;
     background: #fff;
@@ -659,7 +660,11 @@ tr:hover td {
 
   .shell,
   .modal-backdrop,
-  .toast {
+  .toast,
+  .sidebar,
+  .topbar,
+  .stats,
+  .panel-head button {
     display: none !important;
   }
 
