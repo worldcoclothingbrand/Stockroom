@@ -681,3 +681,93 @@ tr:hover td {
 #print-area {
   display: none;
 }
+
+/* ============ MOBILE / RESPONSIVE ============ */
+
+/* Let page shrink on small screens */
+body {
+  min-width: 0;
+}
+
+/* Stack layout instead of sidebar + main */
+@media (max-width: 900px) {
+  .shell {
+    grid-template-columns: 1fr;
+  }
+
+  .sidebar {
+    position: fixed;
+    left: -260px;
+    top: 0;
+    height: 100%;
+    width: 260px;
+    z-index: 50;
+    transition: 0.25s ease;
+  }
+
+  .sidebar.open {
+    left: 0;
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 40;
+    display: none;
+  }
+
+  .sidebar-overlay.open {
+    display: block;
+  }
+
+  /* Hamburger button */
+  .hamburger {
+    position: fixed;
+    top: 14px;
+    left: 14px;
+    z-index: 60;
+    width: 42px;
+    height: 42px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.1);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .main {
+    padding: 16px;
+    padding-top: 70px;
+  }
+
+  /* Stack stats */
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  /* Stack workspace panels */
+  .workspace {
+    grid-template-columns: 1fr;
+  }
+
+  /* Search filters stack */
+  .search-row {
+    grid-template-columns: 1fr;
+  }
+
+  /* Tables scroll instead of breaking layout */
+  table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  /* Make buttons easier to tap */
+  button,
+  .primary-button,
+  .ghost-button {
+    min-height: 44px;
+  }
+}
