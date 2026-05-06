@@ -78,7 +78,7 @@ function ensureApp() {
 
 // ── Auth ──────────────────────────────────────────────────
 
-const auth = firebase.auth();
+
 
 auth.setPersistence(firebase.auth.Auth.Persistence.LOCAL)
   .then(() => {
