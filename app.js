@@ -434,9 +434,9 @@ function renderReports(t) {
     '<aside class="drawer">' +
       '<section class="panel"><div class="panel-head"><div><h3>Snapshot</h3><p>Live totals</p></div></div>' +
         '<div class="checkout-list">' +
-          '<div class="mini-card total-row"><span>Retail value</span><strong>'     + money(t.retail)  + '</strong></div>' +
-          '<div class="mini-card total-row"><span>Cost basis</span><strong>'       + money(t.cost)    + '</strong></div>' +
-          '<div class="mini-card total-row"><span>Projected margin</span><strong>' + money(t.margin)  + '</strong></div>' +
+          '<div class="mini-card total-row"><span>Retail value </span><strong>'     + money(t.retail)  + '</strong></div>' +
+          '<div class="mini-card total-row"><span>Cost basis </span><strong>'       + money(t.cost)    + '</strong></div>' +
+          '<div class="mini-card total-row"><span>Projected margin </span><strong>' + money(t.margin)  + '</strong></div>' +
         '</div>' +
       '</section>' +
       '<section class="panel"><div class="panel-head"><div><h3>Recent sales</h3><p>Newest first</p></div></div>' +
