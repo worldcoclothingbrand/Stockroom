@@ -417,7 +417,7 @@ tr:hover td { background: rgba(255,255,255,0.035); }
 }
 
 .print-label strong { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.print-label small  { color: #333; font-size: 5px; }
+.print-label small  { color: #333; font-size: 10px; }
 .print-label svg    { width: 100%; height: 54px; }
 
 /* ── Misc ───────────────────────────────────────────────── */
