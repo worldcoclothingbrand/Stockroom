@@ -1,10 +1,6 @@
 const STORAGE_KEY   = "stockroom.inventory.v1";
 const SALES_KEY     = "stockroom.sales.v1";
-const SESSION_KEY   = "stockroom.session.v1";
-
-// SHA-256 hash of the access password — no plain text password stored anywhere
-// This hash = "Worldco2024!" — change by hashing your new password at sha256.online
-const PASSWORD_HASH = "2badd8586cbe1b4cc2cae4f514d3634cf7435030edad6f1bffe7df40701984b1";
+const ALLOWED_EMAIL = "worldcoclothingbrand@gmail.com";
 
 // ── Firebase ──────────────────────────────────────────────
 const firebaseConfig = {
@@ -16,27 +12,13 @@ const firebaseConfig = {
   appId: "1:629513576568:web:ca15a5bed03c4877e34d8d"
 };
 firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
+const db       = firebase.firestore();
+const auth     = firebase.auth();
+const provider = new firebase.auth.GoogleAuthProvider();
 // ─────────────────────────────────────────────────────────
 
 let filterTimer;
-
-async function hashPassword(password) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(password);
-  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
-  const hashArray = Array.from(new Uint8Array(hashBuffer));
-  return hashArray.map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-function isLoggedIn() {
-  return sessionStorage.getItem(SESSION_KEY) === "granted";
-}
-
-function logout() {
-  sessionStorage.removeItem(SESSION_KEY);
-  renderLogin();
-}
+let currentUser = null;
 
 const state = {
   tab: "inventory",
@@ -58,52 +40,69 @@ function uid() {
 // ── Auth ──────────────────────────────────────────────────
 
 function renderLogin(errorMsg) {
+  document.querySelector("#app").innerHTML = "";
   document.body.innerHTML =
     '<div class="login-screen">' +
       '<div class="login-card">' +
         '<div class="login-mark">S</div>' +
         '<h1 class="login-title">Stockroom</h1>' +
-        '<p class="login-sub">Enter your access password</p>' +
+        '<p class="login-sub">Sign in to access your inventory</p>' +
         (errorMsg ? '<p class="login-error">' + escapeHtml(errorMsg) + '</p>' : "") +
-        '<input class="input" id="pw-input" type="password" placeholder="Password" style="margin-top:8px;"/>' +
-        '<button class="login-btn" id="pw-submit-btn" style="margin-top:10px;">Access Stockroom</button>' +
+        '<button class="login-btn" id="google-signin-btn">' +
+          '<svg width="20" height="20" viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>' +
+          'Sign in with Google' +
+        '</button>' +
       '</div>' +
     '</div>';
 
-  var input = document.getElementById("pw-input");
-  var btn   = document.getElementById("pw-submit-btn");
-
-  function attempt() {
-    var pw = input.value.trim();
-    if (!pw) return;
-    hashPassword(pw).then(function(hash) {
-      if (hash === PASSWORD_HASH) {
-        sessionStorage.setItem(SESSION_KEY, "granted");
-        bootApp();
-      } else {
-        renderLogin("Incorrect password. Try again. (Got hash: " + hash.slice(0,8) + "...)");
-      }
+  document.getElementById("google-signin-btn").addEventListener("click", function() {
+    auth.signInWithPopup(provider).catch(function(err) {
+      renderLogin("Sign-in failed. Please try again.");
+      console.error(err);
     });
-  }
-
-  btn.addEventListener("click", attempt);
-  input.addEventListener("keydown", function(e) { if (e.key === "Enter") attempt(); });
-  setTimeout(function() { input.focus(); }, 50);
+  });
 }
 
-function bootApp() {
+function renderAccessDenied(email) {
+  document.body.innerHTML =
+    '<div class="login-screen">' +
+      '<div class="login-card">' +
+        '<div class="login-mark" style="background:#ff5c7a;color:#fff;">✕</div>' +
+        '<h1 class="login-title">Access Denied</h1>' +
+        '<p class="login-sub">This account is not authorized.</p>' +
+        '<p class="login-error">' + escapeHtml(email) + '</p>' +
+        '<button class="login-btn" id="signout-denied-btn" style="margin-top:8px;">Sign out &amp; try another account</button>' +
+      '</div>' +
+    '</div>';
+  document.getElementById("signout-denied-btn").addEventListener("click", function() {
+    auth.signOut();
+  });
+}
+
+// Watch auth state — this is the gatekeeper
+auth.onAuthStateChanged(function(user) {
+  if (!user) {
+    // Not signed in → show login
+    currentUser = null;
+    renderLogin();
+    return;
+  }
+
+  if (user.email !== ALLOWED_EMAIL) {
+    // Wrong account → block immediately
+    currentUser = null;
+    renderAccessDenied(user.email);
+    return;
+  }
+
+  // Authorised ✓
+  currentUser = user;
+  // Restore app container if we replaced body innerHTML
   if (!document.getElementById("app")) {
     document.body.innerHTML = '<div id="app"></div>';
   }
   load().then(function() { render(); }).catch(function(e) { console.error(e); render(); });
-}
-
-// Check session on load
-if (isLoggedIn()) {
-  bootApp();
-} else {
-  renderLogin();
-}
+});
 
 // ── Data ──────────────────────────────────────────────────
 
@@ -554,7 +553,7 @@ function handleAction(action, id) {
   if (action === "export")          exportData();
   if (action === "clear-all-sales") clearAllSales();
   if (action === "clear-all-data")  clearAllData();
-  if (action === "signout")         logout();
+  if (action === "signout")         auth.signOut();
 }
 
 // ── Product modal ─────────────────────────────────────────
