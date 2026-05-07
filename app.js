@@ -363,8 +363,8 @@ function renderSell(products) {
       '<div class="panel-head"><div><h3>Current sale</h3><p>' + cartItems.length + ' items</p></div></div>' +
       '<div class="checkout-list">' + items + '</div>' +
       '<div class="cart-total">' +
-        '<div class="total-row"><span>Subtotal</span><strong>' + money(subtotal) + '</strong></div>' +
-        '<div class="total-row"><span>Est. margin</span><span>' + money(subtotal - cost) + '</span></div>' +
+        '<div class="total-row"><span>Subtotal </span><strong>' + money(subtotal) + '</strong></div>' +
+        '<div class="total-row"><span>Est. margin </span><span>' + money(subtotal - cost) + '</span></div>' +
         '<button class="primary-button" data-action="complete-sale" ' + (cartItems.length ? "" : "disabled") + '>' + icon("cart") + 'Complete sale</button>' +
         '<button class="ghost-button" data-action="clear-cart">Clear</button>' +
       '</div>' +
