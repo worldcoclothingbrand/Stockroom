@@ -316,6 +316,10 @@ button { border: 0; cursor: pointer; }
 
 table { width: 100%; border-collapse: collapse; }
 
+table {
+  font-size: clamp(12px, 1.2vw, 15px);
+}
+
 th, td {
   padding: 13px 16px; border-bottom: 1px solid var(--line);
   text-align: left; vertical-align: middle;
