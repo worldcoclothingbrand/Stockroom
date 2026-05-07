@@ -665,6 +665,3 @@ function toast(msg) {
 }
 
 }
-      
-    });
-  }
