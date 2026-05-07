@@ -37,37 +37,6 @@ function uid() {
     : "id-" + Date.now() + "-" + Math.random().toString(16).slice(2);
 }
 
-function showLogin(errorMsg) {
-  document.body.innerHTML =
-    '<div class="login-screen">' +
-      '<div class="login-card">' +
-        '<div class="login-mark">S</div>' +
-        '<h1 class="login-title">Stockroom</h1>' +
-        '<p class="login-sub">Enter your access code</p>' +
-        (errorMsg ? '<p class="login-error">' + errorMsg + '</p>' : "") +
-        '<input id="pin-input" type="password" class="input" placeholder="Access code" style="margin-top:12px;" autocomplete="current-password"/>' +
-        '<button id="pin-btn" class="login-btn" style="margin-top:10px;">Enter Stockroom</button>' +
-      '</div>' +
-    '</div>';
-
-  var inp = document.getElementById("pin-input");
-  var btn = document.getElementById("pin-btn");
-
-  function tryPin() {
-    var val = inp.value;
-    if (!val) return;
-    hashPin(val).then(function(h) {
-      if (h === PIN_HASH) {
-        localStorage.setItem(AUTH_KEY, PIN_HASH);
-        startApp();
-      } else {
-        showLogin("Incorrect code. Try again.");
-      }
-    });
-  }
-
-  if (btn) btn.addEventListener("click", tryPin);
-}
 
 async function startApp() {
   await load().catch(err => console.error(err));
@@ -277,8 +246,7 @@ function render() {
           navBtn("reports",   "chart",   "Reports") +
         '</nav>' +
         '<div class="side-card">' +
-          '<p class="side-note">Signed in as<br><strong style="color:#fff;word-break:break-all;">' + escapeHtml(currentUser ? currentUser.email : "") + '</strong></p>' +
-          '<button class="ghost-button" data-action="signout" style="margin-top:10px;width:100%;">' + icon("logout") + 'Sign out</button>' +
+          '<p class="side-note">Made By Logan Worthen<br><strong style="color:#fff;word-break:break-all;">'  +
         '</div>' +
       '</aside>' +
       '<main class="main">' +
@@ -523,8 +491,7 @@ function handleAction(action, id) {
   if (action === "export")          exportData();
   if (action === "clear-all-sales") clearAllSales();
   if (action === "clear-all-data")  clearAllData();
-  if (action === "signout")         auth.signOut();
-}
+ 
 
 // ── Product modal ─────────────────────────────────────────
 
