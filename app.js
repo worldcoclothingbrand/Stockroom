@@ -56,10 +56,16 @@ function renderLogin(errorMsg) {
     '</div>';
 
   document.getElementById("google-signin-btn").addEventListener("click", function() {
-    // Always use redirect — most compatible across all browsers and devices
-    auth.signInWithRedirect(provider).catch(function(err) {
-      renderLogin("Sign-in failed: " + (err.message || "Please try again."));
-      console.error(err);
+    auth.signInWithPopup(provider).then(function(result) {
+      // popup succeeded — onAuthStateChanged will handle the rest
+    }).catch(function(err) {
+      // popup was blocked (Safari) — fall back to redirect
+      if (err.code === "auth/popup-blocked" || err.code === "auth/popup-closed-by-user") {
+        auth.signInWithRedirect(provider);
+      } else {
+        renderLogin("Sign-in failed: " + (err.message || "Please try again."));
+        console.error(err);
+      }
     });
   });
 }
@@ -88,50 +94,21 @@ function bootApp(user) {
   load().then(function() { render(); }).catch(function(e) { console.error(e); render(); });
 }
 
-// Boot sequence — handles both redirect return and normal auth state
-async function initAuth() {
-  // Show a loading state while we check
-  document.body.innerHTML =
-    '<div class="login-screen"><div class="login-card">' +
-    '<div class="login-mark">S</div>' +
-    '<p style="color:var(--muted);margin:0;font-size:14px;">Loading...</p>' +
-    '</div></div>';
-
-  // Step 1: check if we just came back from a Google redirect
-  try {
-    var result = await auth.getRedirectResult();
-    if (result && result.user) {
-      // Just finished redirect sign-in — user is now set
-      if (result.user.email !== ALLOWED_EMAIL) {
-        await auth.signOut();
-        renderAccessDenied(result.user.email);
-        return;
-      }
-      bootApp(result.user);
-      return;
-    }
-  } catch(e) {
-    console.error("getRedirectResult error:", e);
-    renderLogin("Sign-in error: " + (e.message || "Please try again."));
+// Single gatekeeper — simple and reliable
+auth.onAuthStateChanged(function(user) {
+  if (!user) {
+    currentUser = null;
+    renderLogin();
     return;
   }
-
-  // Step 2: check if already signed in
-  auth.onAuthStateChanged(function(user) {
-    if (!user) {
-      renderLogin();
-      return;
-    }
-    if (user.email !== ALLOWED_EMAIL) {
-      auth.signOut();
-      renderAccessDenied(user.email);
-      return;
-    }
-    bootApp(user);
-  });
-}
-
-initAuth();
+  if (user.email !== ALLOWED_EMAIL) {
+    currentUser = null;
+    auth.signOut();
+    renderAccessDenied(user.email);
+    return;
+  }
+  bootApp(user);
+});
 
 // ── Data ──────────────────────────────────────────────────
 
