@@ -4,7 +4,7 @@ const SESSION_KEY   = "stockroom.session.v1";
 
 // SHA-256 hash of the access password — no plain text password stored anywhere
 // This hash = "Worldco2024!" — change by hashing your new password at sha256.online
-const PASSWORD_HASH = "a8f5f167f44f4964e6c998dee827110c6d49a3eb165df73834bef6b71cf1abcf";
+const PASSWORD_HASH = "2badd8586cbe1b4cc2cae4f514d3634cf7435030edad6f1bffe7df40701984b1";
 
 // ── Firebase ──────────────────────────────────────────────
 const firebaseConfig = {
