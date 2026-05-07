@@ -491,7 +491,7 @@ function handleAction(action, id) {
   if (action === "export")          exportData();
   if (action === "clear-all-sales") clearAllSales();
   if (action === "clear-all-data")  clearAllData();
- 
+ }
 
 // ── Product modal ─────────────────────────────────────────
 
