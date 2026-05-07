@@ -56,18 +56,11 @@ function renderLogin(errorMsg) {
     '</div>';
 
   document.getElementById("google-signin-btn").addEventListener("click", function() {
-    // Use redirect on Safari/iOS (popup blocked), popup everywhere else
-    var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
-    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
-    if (isSafari || isIOS) {
-      auth.signInWithRedirect(provider).catch(function(err) {
-        renderLogin("Sign-in failed: " + (err.message || "Please try again."));
-      });
-    } else {
-      auth.signInWithPopup(provider).catch(function(err) {
-        renderLogin("Sign-in failed: " + (err.message || "Please try again."));
-      });
-    }
+    // Always use redirect — most compatible across all browsers and devices
+    auth.signInWithRedirect(provider).catch(function(err) {
+      renderLogin("Sign-in failed: " + (err.message || "Please try again."));
+      console.error(err);
+    });
   });
 }
 
@@ -95,20 +88,50 @@ function bootApp(user) {
   load().then(function() { render(); }).catch(function(e) { console.error(e); render(); });
 }
 
-// Single gatekeeper for all browsers
-auth.onAuthStateChanged(function(user) {
-  if (!user) {
-    currentUser = null;
-    renderLogin();
+// Boot sequence — handles both redirect return and normal auth state
+async function initAuth() {
+  // Show a loading state while we check
+  document.body.innerHTML =
+    '<div class="login-screen"><div class="login-card">' +
+    '<div class="login-mark">S</div>' +
+    '<p style="color:var(--muted);margin:0;font-size:14px;">Loading...</p>' +
+    '</div></div>';
+
+  // Step 1: check if we just came back from a Google redirect
+  try {
+    var result = await auth.getRedirectResult();
+    if (result && result.user) {
+      // Just finished redirect sign-in — user is now set
+      if (result.user.email !== ALLOWED_EMAIL) {
+        await auth.signOut();
+        renderAccessDenied(result.user.email);
+        return;
+      }
+      bootApp(result.user);
+      return;
+    }
+  } catch(e) {
+    console.error("getRedirectResult error:", e);
+    renderLogin("Sign-in error: " + (e.message || "Please try again."));
     return;
   }
-  if (user.email !== ALLOWED_EMAIL) {
-    currentUser = null;
-    renderAccessDenied(user.email);
-    return;
-  }
-  bootApp(user);
-});
+
+  // Step 2: check if already signed in
+  auth.onAuthStateChanged(function(user) {
+    if (!user) {
+      renderLogin();
+      return;
+    }
+    if (user.email !== ALLOWED_EMAIL) {
+      auth.signOut();
+      renderAccessDenied(user.email);
+      return;
+    }
+    bootApp(user);
+  });
+}
+
+initAuth();
 
 // ── Data ──────────────────────────────────────────────────
 
