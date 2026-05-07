@@ -56,11 +56,18 @@ function renderLogin(errorMsg) {
     '</div>';
 
   document.getElementById("google-signin-btn").addEventListener("click", function() {
-    // signInWithRedirect works on Safari and all browsers — no popup needed
-    auth.signInWithRedirect(provider).catch(function(err) {
-      renderLogin("Sign-in failed: " + (err.message || "Please try again."));
-      console.error(err);
-    });
+    // Use redirect on Safari/iOS (popup blocked), popup everywhere else
+    var isSafari = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
+    var isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+    if (isSafari || isIOS) {
+      auth.signInWithRedirect(provider).catch(function(err) {
+        renderLogin("Sign-in failed: " + (err.message || "Please try again."));
+      });
+    } else {
+      auth.signInWithPopup(provider).catch(function(err) {
+        renderLogin("Sign-in failed: " + (err.message || "Please try again."));
+      });
+    }
   });
 }
 
@@ -87,14 +94,6 @@ function bootApp(user) {
   }
   load().then(function() { render(); }).catch(function(e) { console.error(e); render(); });
 }
-
-// Handle result when returning from Google redirect (Safari / mobile)
-auth.getRedirectResult().then(function(result) {
-  // onAuthStateChanged fires after this and handles everything
-}).catch(function(err) {
-  console.error("Redirect result error:", err);
-  renderLogin("Sign-in failed: " + (err.message || "Please try again."));
-});
 
 // Single gatekeeper for all browsers
 auth.onAuthStateChanged(function(user) {
