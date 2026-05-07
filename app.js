@@ -74,14 +74,14 @@ function renderLogin(errorMsg) {
   var btn   = document.getElementById("pw-submit-btn");
 
   function attempt() {
-    var pw = input.value;
+    var pw = input.value.trim();
     if (!pw) return;
     hashPassword(pw).then(function(hash) {
       if (hash === PASSWORD_HASH) {
         sessionStorage.setItem(SESSION_KEY, "granted");
         bootApp();
       } else {
-        renderLogin("Incorrect password. Try again.");
+        renderLogin("Incorrect password. Try again. (Got hash: " + hash.slice(0,8) + "...)");
       }
     });
   }
