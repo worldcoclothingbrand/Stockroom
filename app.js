@@ -66,6 +66,14 @@ function showLogin(errorMsg) {
     });
   }
 
+  if (btn) btn.addEventListener("click", tryPin);
+}
+
+async function startApp() {
+  await load().catch(err => console.error(err));
+  render();
+}
+
 // ── Data ──────────────────────────────────────────────────
 
 async function load() {
@@ -664,4 +672,5 @@ function toast(msg) {
   setTimeout(() => el.remove(), 2600);
 }
 
-}
+document.addEventListener("DOMContentLoaded", startApp);
+    
