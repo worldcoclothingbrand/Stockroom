@@ -257,7 +257,7 @@ button { border: 0; cursor: pointer; }
   border-radius: var(--radius); box-shadow: 0 18px 50px rgba(0,0,0,0.18);
 }
 
-.stat small  { color: var(--muted); }
+.stat small  { color: var(--muted); font-size: 20px; }
 .stat strong { display: block; margin-top: 12px; font-size: 30px; }
 .stat span   { display: block; margin-top: 8px; color: var(--quiet); font-size: 12px; }
 
