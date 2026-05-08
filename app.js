@@ -640,3 +640,4 @@ function toast(msg) {
 }
 
 document.addEventListener("DOMContentLoaded", startApp);
+    
