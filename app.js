@@ -37,6 +37,37 @@ function uid() {
     : "id-" + Date.now() + "-" + Math.random().toString(16).slice(2);
 }
 
+function showLogin(errorMsg) {
+  document.body.innerHTML =
+    '<div class="login-screen">' +
+      '<div class="login-card">' +
+        '<div class="login-mark">S</div>' +
+        '<h1 class="login-title">Stockroom</h1>' +
+        '<p class="login-sub">Enter your access code</p>' +
+        (errorMsg ? '<p class="login-error">' + errorMsg + '</p>' : "") +
+        '<input id="pin-input" type="password" class="input" placeholder="Access code" style="margin-top:12px;" autocomplete="current-password"/>' +
+        '<button id="pin-btn" class="login-btn" style="margin-top:10px;">Enter Stockroom</button>' +
+      '</div>' +
+    '</div>';
+
+  var inp = document.getElementById("pin-input");
+  var btn = document.getElementById("pin-btn");
+
+  function tryPin() {
+    var val = inp.value;
+    if (!val) return;
+    hashPin(val).then(function(h) {
+      if (h === PIN_HASH) {
+        localStorage.setItem(AUTH_KEY, PIN_HASH);
+        startApp();
+      } else {
+        showLogin("Incorrect code. Try again.");
+      }
+    });
+  }
+
+  if (btn) btn.addEventListener("click", tryPin);
+}
 
 async function startApp() {
   await load().catch(err => console.error(err));
@@ -246,7 +277,8 @@ function render() {
           navBtn("reports",   "chart",   "Reports") +
         '</nav>' +
         '<div class="side-card">' +
-          '<p class="side-note">Made By Logan Worthen<br><strong style="color:#fff;word-break:break-all;">'  +
+          '<p class="side-note">Signed in as<br><strong style="color:#fff;word-break:break-all;">' + escapeHtml(currentUser ? currentUser.email : "") + '</strong></p>' +
+          '<button class="ghost-button" data-action="signout" style="margin-top:10px;width:100%;">' + icon("logout") + 'Sign out</button>' +
         '</div>' +
       '</aside>' +
       '<main class="main">' +
@@ -290,7 +322,7 @@ function renderStats(t) {
   return '<section class="grid stats">' +
     '<div class="stat"><small>Retail inventory value</small><strong>' + money(t.retail)  + '</strong><span>' + money(t.margin) + ' projected margin</span></div>' +
     '<div class="stat"><small>Units in stock</small><strong>'          + number(t.units)  + '</strong><span>' + state.products.length + ' products</span></div>' +
-    '<div class="stat"><small>Low stock</small><strong>'               + number(t.low)    + '</strong><span>At or below minimum stock</span></div>' +
+    '<div class="stat"><small>Low stock</small><strong>'               + number(t.low)    + '</strong><span>At or below reorder level</span></div>' +
     '<div class="stat"><small>Total sales</small><strong>'             + money(t.revenue) + '</strong><span>' + state.sales.length + ' checkouts</span></div>' +
   '</section>';
 }
@@ -394,6 +426,8 @@ function renderLabels(products) {
       '<button class="ghost-button" data-action="select-visible">' + icon("plus") + 'Select visible</button></div>' +
       renderFilters() + renderProductTable(products) +
     '</div>' +
+    '<div class="panel2">' +
+        '<div class="panel-head"><div><h3>Lables Chosen</h3><p> + </p> <p> - </p></div></div>' +
     '<aside class="panel">' +
       '<div class="panel-head"><div><h3>Preview</h3><p>' + selected.length + ' selected</p></div>' +
       '<button class="primary-button" data-action="print-labels" ' + (selected.length ? "" : "disabled") + '>' + icon("print") + 'Print</button></div>' +
@@ -434,9 +468,9 @@ function renderReports(t) {
     '<aside class="drawer">' +
       '<section class="panel"><div class="panel-head"><div><h3>Snapshot</h3><p>Live totals</p></div></div>' +
         '<div class="checkout-list">' +
-          '<div class="mini-card total-row"><span>Retail value </span><strong>'     + money(t.retail)  + '</strong></div>' +
-          '<div class="mini-card total-row"><span>Cost basis </span><strong>'       + money(t.cost)    + '</strong></div>' +
-          '<div class="mini-card total-row"><span>Projected margin </span><strong>' + money(t.margin)  + '</strong></div>' +
+          '<div class="mini-card total-row"><span>Retail value</span><strong>'     + money(t.retail)  + '</strong></div>' +
+          '<div class="mini-card total-row"><span>Cost basis</span><strong>'       + money(t.cost)    + '</strong></div>' +
+          '<div class="mini-card total-row"><span>Projected margin</span><strong>' + money(t.margin)  + '</strong></div>' +
         '</div>' +
       '</section>' +
       '<section class="panel"><div class="panel-head"><div><h3>Recent sales</h3><p>Newest first</p></div></div>' +
@@ -491,7 +525,8 @@ function handleAction(action, id) {
   if (action === "export")          exportData();
   if (action === "clear-all-sales") clearAllSales();
   if (action === "clear-all-data")  clearAllData();
- }
+  if (action === "signout")         auth.signOut();
+}
 
 // ── Product modal ─────────────────────────────────────────
 
@@ -514,15 +549,15 @@ function openProductModal(id) {
     '<form class="modal" id="product-form">' +
       '<div class="panel-head"><div><h3>' + (existing ? "Edit product" : "New product") + '</h3><p>Barcode auto-generated, editable.</p></div></div>' +
       '<div class="modal-body"><div class="form-grid">' +
-        field("Name",          "name",           product.name,     "text",   true)  +
-        field("SKU",           "sku",            product.sku,      "text",   true)  +
-        field("Category",      "category",       product.category, "text",   false) +
-        field("Barcode",       "barcode",        product.barcode,  "text",   true)  +
-        field("Cost",          "cost",           product.cost,     "number", true)  +
-        field("Price",         "price",          product.price,    "number", true)  +
-        field("Stock",         "stock",          product.stock,    "number", true)  +
-        field("Minimum Stock", "minimum-stock",  product.reorder,  "number", true)  +
-        field("Color",         "color",          product.color || "#ffffff", "color", false) +
+        field("Name",          "name",     product.name,     "text",   true)  +
+        field("SKU",           "sku",      product.sku,      "text",   true)  +
+        field("Category",      "category", product.category, "text",   false) +
+        field("Barcode",       "barcode",  product.barcode,  "text",   true)  +
+        field("Cost",          "cost",     product.cost,     "number", true)  +
+        field("Price",         "price",    product.price,    "number", true)  +
+        field("Stock",         "stock",    product.stock,    "number", true)  +
+        field("Reorder level", "reorder",  product.reorder,  "number", true)  +
+        field("Color",         "color",    product.color || "#ffffff", "color", false) +
         '<div class="field full"><label>Notes</label><textarea class="textarea" name="notes">' + escapeHtml(product.notes) + '</textarea></div>' +
         '<div class="field full"><label>Barcode preview</label><div class="barcode-wrap">' + barcodeSvg(product.barcode) + '</div></div>' +
       '</div></div>' +
