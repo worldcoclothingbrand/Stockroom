@@ -426,8 +426,6 @@ function renderLabels(products) {
       '<button class="ghost-button" data-action="select-visible">' + icon("plus") + 'Select visible</button></div>' +
       renderFilters() + renderProductTable(products) +
     '</div>' +
-    '<div class="panel2">' +
-        '<div class="panel-head"><div><h3>Lables Chosen</h3><p> + </p> <p> - </p></div></div>' +
     '<aside class="panel">' +
       '<div class="panel-head"><div><h3>Preview</h3><p>' + selected.length + ' selected</p></div>' +
       '<button class="primary-button" data-action="print-labels" ' + (selected.length ? "" : "disabled") + '>' + icon("print") + 'Print</button></div>' +
